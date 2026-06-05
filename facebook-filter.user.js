@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Block suggested posts on Facebook
 // @namespace    //
-// @version      2.0.0
+// @version      2.1.0
 // @description  Filter out suggested posts & recommended groups on Facebook Newsfeed
 // @author       Harold Dao & AI
 // @match        https://www.facebook.com/*
@@ -13,7 +13,7 @@
 (function () {
     'use strict';
 
-    console.log("=== Fb Filter v2.0: MutationObserver Edition ===");
+    console.log("=== Fb Filter v2.1: MutationObserver Edition ===");
 
     let removedCount = 0;
 
@@ -77,6 +77,27 @@
             }
         }
 
+        // Strategy 3: check aria-label on action buttons (most reliable)
+        const actionButtons = post.querySelectorAll('[role="button"], a[role="link"]');
+        for (const btn of actionButtons) {
+            const label = (btn.getAttribute('aria-label') || '').trim();
+            if (GARBAGE_LABELS.has(label)) return true;
+        }
+
+        // Strategy 4: check text of short spans (Follow/Join buttons)
+        // Only look at spans with short text (<= 30 chars) to avoid scanning full post content
+        const spans = post.querySelectorAll('span');
+        for (const span of spans) {
+            // Only grab direct text of this span, not its children
+            const directText = Array.from(span.childNodes)
+                .filter(n => n.nodeType === Node.TEXT_NODE)
+                .map(n => n.textContent.trim())
+                .join('');
+            if (directText.length > 0 && directText.length <= 30 && GARBAGE_LABELS.has(directText)) {
+                return true;
+            }
+        }
+
         return false;
     }
 
@@ -99,8 +120,18 @@
         }
     }
 
+    // ─── Remove Reels block from feed ─────────────────────────────────────────
+    function removeReelsBlocks() {
+        document.querySelectorAll('[role="region"][aria-label="Reels"]').forEach(reelsBlock => {
+            const container = reelsBlock.closest('div[aria-posinset], div[data-pagelet^="FeedUnit_"]');
+            if (container) { container.remove(); }
+            else { reelsBlock.remove(); }
+        });
+    }
+
     // ─── Scan all posts currently on the page ─────────────────────────────────
     function scanAll() {
+        removeReelsBlocks();
         const posts = document.querySelectorAll(
             'div[aria-posinset], div[data-pagelet^="FeedUnit_"]'
         );
