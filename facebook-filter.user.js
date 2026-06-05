@@ -58,28 +58,7 @@
 
     // ─── Check if a post is garbage ───────────────────────────────────────────
     function isGarbagePost(post) {
-        // // Strategy 1: check aria-label on action buttons (most reliable)
-        // const actionButtons = post.querySelectorAll('[role="button"], a[role="link"]');
-        // for (const btn of actionButtons) {
-        //     const label = (btn.getAttribute('aria-label') || '').trim();
-        //     if (GARBAGE_LABELS.has(label)) return true;
-        // }
-
-        // // Strategy 2: check text of short spans (Follow/Join buttons)
-        // // Only look at spans with short text (<= 30 chars) to avoid scanning full post content
-        // const spans = post.querySelectorAll('span');
-        // for (const span of spans) {
-        //     // Only grab direct text of this span, not its children
-        //     const directText = Array.from(span.childNodes)
-        //         .filter(n => n.nodeType === Node.TEXT_NODE)
-        //         .map(n => n.textContent.trim())
-        //         .join('');
-        //     if (directText.length > 0 && directText.length <= 30 && GARBAGE_LABELS.has(directText)) {
-        //         return true;
-        //     }
-        // }
-
-        // Strategy 3: check data-attributes Facebook usually sets for sponsored posts
+        // Strategy 1: check data-attributes Facebook usually sets for sponsored posts
         if (
             post.querySelector('[data-testid="story-sponsored-label"]') ||
             post.querySelector('a[href*="ads/about"]')
@@ -87,7 +66,7 @@
             return true;
         }
 
-        // Strategy 4: check ONLY inside the profile_name header zone.
+        // Strategy 2: check ONLY inside the profile_name header zone.
         // Join/Follow/Sponsored in this zone always means suggested/spam.
         const profileNameZone = post.querySelector('[data-ad-rendering-role="profile_name"]');
         if (profileNameZone) {
